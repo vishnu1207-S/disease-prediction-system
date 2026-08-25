@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Disease Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Medi<span class="highlight">Predict</span></h1>
+            <p>AI-Powered Healthcare Diagnostics</p>
+        </header>
+
+        <div class="main-content">
+            <form id="prediction-form" class="glass-panel">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" required min="1" max="120" placeholder="e.g. 45">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Vitals</label>
+                    <div class="vitals-grid">
+                        <input type="number" id="blood_pressure" required placeholder="Blood Pressure (e.g. 120)">
+                        <input type="number" id="sugar_level" required placeholder="Sugar Level (e.g. 95)">
+                        <input type="number" id="cholesterol" required placeholder="Cholesterol (e.g. 180)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="medical_history">Medical History</label>
+                    <select id="medical_history">
+                        <option value="None">None</option>
+                        <option value="Diabetes">Diabetes</option>
+                        <option value="Hypertension">Hypertension</option>
+                        <option value="Asthma">Asthma</option>
+                        <option value="Obesity">Obesity</option>
+                        <option value="Allergies">Allergies</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Symptoms</label>
+                    <div class="symptoms-container">
+                        <label class="symptom-chip"><input type="checkbox" value="Fever"> Fever</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Cough"> Cough</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Fatigue"> Fatigue</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Headache"> Headache</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Sore Throat"> Sore Throat</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Muscle Ache"> Muscle Ache</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Chest Pain"> Chest Pain</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Shortness of Breath"> Shortness of Breath</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Dizziness"> Dizziness</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Palpitations"> Palpitations</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Increased Thirst"> Increased Thirst</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Frequent Urination"> Frequent Urination</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Blurred Vision"> Blurred Vision</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Weight Loss"> Weight Loss</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Nosebleeds"> Nosebleeds</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Runny Nose"> Runny Nose</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Congestion"> Congestion</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Sneezing"> Sneezing</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Wheezing"> Wheezing</label>
+                        <label class="symptom-chip"><input type="checkbox" value="Chest Tightness"> Chest Tightness</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="predict-btn">Analyze Patient Data</button>
+            </form>
+
+            <div id="result-panel" class="glass-panel result-panel hidden">
+                <div class="loader" id="loader"></div>
+                <div id="result-content" class="hidden">
+                    <h2>Diagnosis Complete</h2>
+                    <p class="subtitle">Predicted Condition:</p>
+                    <div class="prediction-box">
+                        <h1 id="disease-name">---</h1>
+                    </div>
+                    <p class="disclaimer">* This is an AI prediction. Always consult a healthcare professional for accurate medical advice.</p>
+                    <button id="reset-btn" class="secondary-btn">New Patient</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultPanel = document.getElementById('result-panel');
+            const resultContent = document.getElementById('result-content');
+            const loader = document.getElementById('loader');
+            
+            resultPanel.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+            loader.style.display = 'block';
+
+            const symptoms = [];
+            document.querySelectorAll('.symptom-chip input:checked').forEach(el => {
+                symptoms.push(el.value);
+            });
+
+            const data = {
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                blood_pressure: document.getElementById('blood_pressure').value,
+                sugar_level: document.getElementById('sugar_level').value,
+                cholesterol: document.getElementById('cholesterol').value,
+                medical_history: document.getElementById('medical_history').value,
+                symptoms: symptoms
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    resultContent.classList.remove('hidden');
+                    
+                    if (response.ok) {
+                        document.getElementById('disease-name').innerText = result.prediction;
+                        if(result.prediction === 'Healthy') {
+                             document.getElementById('disease-name').style.color = '#4ade80';
+                        } else {
+                             document.getElementById('disease-name').style.color = '#f87171';
+                        }
+                    } else {
+                        document.getElementById('disease-name').innerText = "Error: " + result.error;
+                        document.getElementById('disease-name').style.color = '#f87171';
+                    }
+                }, 800);
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                resultContent.classList.remove('hidden');
+                document.getElementById('disease-name').innerText = "Server Connection Failed";
+                document.getElementById('disease-name').style.color = '#f87171';
+            }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            document.getElementById('result-panel').classList.add('hidden');
+            document.getElementById('prediction-form').reset();
+        });
+    </script>
+</body>
+</html>
